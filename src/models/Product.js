@@ -1,50 +1,57 @@
-// Importa o Mongoose para criar o modelo
-const mongoose = require('mongoose');
+const pool = require('../config/db');
 
 /**
- * Schema responsável por definir a estrutura dos produtos no banco de dados.
+ * Model de Produtos — refatorado para o schema real do banco `loja`.
  *
- * Contém os campos principais do produto, suas validações, atributos dinâmicos
- * e a referência ao usuário responsável pela criação do registro.
- *
- * @type {import('mongoose').Schema}
+ * Tabela: produtos (id_produto, nome, valor, estoque, categorias_id_categoria)
+ * FK: categorias_id_categoria → categorias(id_categoria)
  */
-const productSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Nome do produto é obrigatório'],
-    trim: true // Remove espaços extras
-  },
-  description: {
-    type: String,
-    required: [true, 'Descrição é obrigatória']
-  },
-  price: {
-    type: Number,
-    required: [true, 'Preço é obrigatório'],
-    min: [0, 'Preço não pode ser negativo'] // Validação de valor mínimo
-  },
-  category: {
-    type: String,
-    required: [true, 'Categoria é obrigatória']
-  },
-  attributes: {
-    type: Map, // Map permite atributos dinâmicos (flexibilidade do NoSQL)
-    of: String
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId, // Referência ao ID do usuário
-    ref: 'User', // Relacionamento com o modelo User
-    required: true
-  }
-}, { timestamps: true }); // Adiciona createdAt e updatedAt automaticamente
 
-/**
- * Modelo Mongoose de Produto.
- *
- * Fornece os recursos necessários para criar, buscar, atualizar e remover
- * documentos da coleção de produtos no MongoDB.
- *
- * @type {import('mongoose').Model}
- */
-module.exports = mongoose.model('Product', productSchema);
+async function getAll() {
+  const [rows] = await pool.execute(`
+    SELECT p.id_produto, p.nome, p.valor, p.estoque,
+           c.id_categoria, c.nome AS categoria
+    FROM produtos p
+    LEFT JOIN categorias c ON p.categorias_id_categoria = c.id_categoria
+    ORDER BY p.id_produto
+  `);
+  return rows;
+}
+
+async function getById(id) {
+  const [rows] = await pool.execute(`
+    SELECT p.id_produto, p.nome, p.valor, p.estoque,
+           c.id_categoria, c.nome AS categoria
+    FROM produtos p
+    LEFT JOIN categorias c ON p.categorias_id_categoria = c.id_categoria
+    WHERE p.id_produto = ?
+  `, [id]);
+  return rows[0] || null;
+}
+
+// Body: { nome, valor, estoque, categorias_id_categoria }
+async function create(nome, valor, estoque, categorias_id_categoria) {
+  const [result] = await pool.execute(
+    'INSERT INTO produtos (nome, valor, estoque, categorias_id_categoria) VALUES (?, ?, ?, ?)',
+    [nome, valor, estoque, categorias_id_categoria]
+  );
+  return result.insertId;
+}
+
+async function update(id, nome, valor, estoque, categorias_id_categoria) {
+  const [result] = await pool.execute(
+    'UPDATE produtos SET nome = ?, valor = ?, estoque = ?, categorias_id_categoria = ? WHERE id_produto = ?',
+    [nome, valor, estoque, categorias_id_categoria, id]
+  );
+  return result.affectedRows > 0;
+}
+
+async function remove(id) {
+  const [result] = await pool.execute(
+    'DELETE FROM produtos WHERE id_produto = ?',
+    [id]
+  );
+  return result.affectedRows > 0;
+}
+
+module.exports = { getAll, getById, create, update, remove };

@@ -4,7 +4,7 @@ require('dotenv').config();
 // Importa o Express para criar o servidor
 const express = require('express');
 
-// Importa o middleware de sanitização contra NoSQL Injection
+// Importa o middleware de sanitização
 const sanitize = require('./src/middlewares/sanitize');
 
 const app = express();
@@ -12,20 +12,32 @@ const app = express();
 // Middleware para interpretar JSON no corpo das requisições
 app.use(express.json());
 
-// Middleware de proteção contra NoSQL Injection
+// Middleware de proteção contra injeção via chaves maliciosas
 app.use(sanitize);
 
-// Rota pública de metadados — GET /api/status e GET /api/versao (sem autenticação)
+// ─── Rotas Públicas ───────────────────────────────────────────────────────────
+
+// GET /api/status e GET /api/versao — sem autenticação
 app.use('/api', require('./src/routes/apiRoutes'));
 
-// Rotas de autenticação
+// POST /api/auth/register e POST /api/auth/login — sem autenticação
 app.use('/api/auth', require('./src/routes/authRoutes'));
 
-// Rotas privadas de categorias — CRUD completo protegido por JWT
+// ─── Rotas Privadas (exigem JWT) ──────────────────────────────────────────────
+
+// CRUD de categorias — /api/categorias
 app.use('/api/categorias', require('./src/routes/categoriaRoutes'));
 
-// Rotas de produtos (protegidas por JWT)
-app.use('/api/products', require('./src/routes/productRoutes'));
+// CRUD de produtos — /api/produtos
+app.use('/api/produtos', require('./src/routes/productRoutes'));
+
+// CRUD de clientes — /api/clientes
+app.use('/api/clientes', require('./src/routes/clientesRoutes'));
+
+// CRUD de pedidos — /api/pedidos
+app.use('/api/pedidos', require('./src/routes/pedidosRoutes'));
+
+// ─── Inicialização ────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));

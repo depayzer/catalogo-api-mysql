@@ -1,24 +1,30 @@
-// Importa o mongo-sanitize para limpar os dados recebidos
-const sanitize = require('mongo-sanitize');
-
 /**
- * Middleware de sanitização das requisições.
+ * Middleware de sanitização básica das requisições.
  *
- * Remove caracteres maliciosos do body e dos params da requisição,
- * ajudando a proteger a API contra ataques de NoSQL Injection.
+ * Remove campos cujo nome começa com "$" ou contém "." do body e params,
+ * protegendo a API contra tentativas de injeção via nomes de chave maliciosos.
+ * Como a API agora usa MySQL com Prepared Statements, o principal vetor de
+ * SQL Injection já é bloqueado pelo driver; este middleware adiciona uma
+ * camada extra de defesa nos dados recebidos.
  *
- * @param {import('express').Request} req - Requisição HTTP contendo body e params a serem sanitizados.
- * @param {import('express').Response} res - Resposta HTTP da aplicação.
- * @param {import('express').NextFunction} next - Função chamada para passar ao próximo middleware ou controller.
- * @returns {void} Continua o fluxo da requisição após sanitizar os dados.
+ * @param {import('express').Request}  req  - Requisição HTTP.
+ * @param {import('express').Response} res  - Resposta HTTP.
+ * @param {import('express').NextFunction} next - Próximo middleware.
  */
+function deepSanitize(obj) {
+  if (typeof obj !== 'object' || obj === null) return obj;
+  for (const key of Object.keys(obj)) {
+    if (key.startsWith('$') || key.includes('.')) {
+      delete obj[key];
+    } else {
+      obj[key] = deepSanitize(obj[key]);
+    }
+  }
+  return obj;
+}
+
 module.exports = (req, res, next) => {
-  // Sanitiza o corpo da requisição
-  if (req.body) req.body = sanitize(req.body);
-
-  // Sanitiza os parâmetros da URL
-  if (req.params) req.params = sanitize(req.params);
-
-  // Passa para o próximo middleware ou controller
+  if (req.body)   req.body   = deepSanitize(req.body);
+  if (req.params) req.params = deepSanitize(req.params);
   next();
 };

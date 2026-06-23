@@ -1,10 +1,11 @@
 {
   "name": "catalogo-apirest",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "API REST com MySQL - Migração de NoSQL para Relacional",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
@@ -15,8 +16,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "mongo-sanitize": "^1.1.0",
-    "mongoose": "^9.6.2"
+    "mysql2": "^3.11.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
