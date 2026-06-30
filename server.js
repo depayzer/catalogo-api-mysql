@@ -7,6 +7,10 @@ const express = require('express');
 // Importa o middleware de sanitização
 const sanitize = require('./src/middlewares/sanitize');
 
+// Importa o Swagger UI e a especificação gerada
+const swaggerUi   = require('swagger-ui-express');
+const swaggerSpec = require('./src/config/swagger');
+
 const app = express();
 
 // Middleware para interpretar JSON no corpo das requisições
@@ -14,6 +18,15 @@ app.use(express.json());
 
 // Middleware de proteção contra injeção via chaves maliciosas
 app.use(sanitize);
+
+// ─── Documentação Swagger ─────────────────────────────────────────────────────
+// Acessível em: http://localhost:3000/api-docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'Catálogo API – Docs',
+  swaggerOptions: {
+    persistAuthorization: true, // mantém o token JWT entre recarregamentos da página
+  },
+}));
 
 // ─── Rotas Públicas ───────────────────────────────────────────────────────────
 
